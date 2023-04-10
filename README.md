@@ -1,4 +1,4 @@
-# Limine Bare Bones
+# Freeunix Bare Bones
 
 This repository will show you how to set up a simple 64-bit x86_64 Long Mode higher half kernel using Limine.
 
