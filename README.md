@@ -1,5 +1,4 @@
 # Freeunix Bare Bones
-![Freeunix Logo](freeunix.png)
 This repository will show you how to set up a simple 64-bit x86_64 Long Mode higher half kernel using Limine.
 
 This project can be built using the host compiler on most Linux distros on x86_64, but it's recommended you set up an x86_64-elf [cross compiler](https://wiki.osdev.org/GCC_Cross-Compiler).
