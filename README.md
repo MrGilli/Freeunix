@@ -5,6 +5,9 @@ This project can be built using the host compiler on most Linux distros on x86_6
 
 It is also recommended to cross reference the contents of this repository with [the Limine Bare Bones](https://wiki.osdev.org/Limine_Bare_Bones) OSDev wiki page.
 
+## How to run
+* bash run.sh | (make clean, make run, qemu-system-x86_64 barebones.iso)
+
 ## Where to go from here
 
 You may be asking yourself: "what now?".  So here's a list of things you may want to do to get started working
