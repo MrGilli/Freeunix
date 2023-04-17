@@ -5,6 +5,8 @@ This project can be built using the host compiler on most Linux distros on x86_6
 
 It is also recommended to cross reference the contents of this repository with [the Limine Bare Bones](https://wiki.osdev.org/Limine_Bare_Bones) OSDev wiki page.
 
+![Freeunix supports GUI v1.0.0](freeunixGUI.png)
+
 ## How to run
 * bash run.sh | (make clean, make run, qemu-system-x86_64 barebones.iso)
 
