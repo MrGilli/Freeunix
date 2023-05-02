@@ -1,11 +1,6 @@
-#include <stdint.h>
-#include <stddef.h>
 #include <limine.h>
-#include <stdlib.h>
-
-// The Limine requests can be placed anywhere, but it is important that
-// the compiler does not optimise them away, so, usually, they should
-// be made volatile or equivalent.
+#include <stddef.h>
+#include <stdint.h>
 
 
 
@@ -214,6 +209,8 @@ void write_string(struct limine_framebuffer *framebuffer, int x, int y, uint8_t 
     volatile uint32_t *fb = framebuffer->address;
     uint32_t pitch = framebuffer->pitch / 4;
 
+    uint32_t bg_color = 0xFFFFFF;
+
     for (int i = 0; string[i] != '\0'; i++) {
         char c = string[i];
         uint8_t *glyph = &font8x8_basic[c][0];
@@ -223,7 +220,12 @@ void write_string(struct limine_framebuffer *framebuffer, int x, int y, uint8_t 
                 for (int k = 7; k >= 0; k--) {
                     for (int n = 0; n < 2; n++) {
                         if (*glyph & (1 << k)) {
-                            *(fb + (y + k*2 + n) * pitch + (x + j*2 + m)) = color;
+                            
+                            // Draw the background color.
+                            *(fb + (y + k*2 + n) * pitch + (x + j*2 + m)) = bg_color;
+                        } else {
+                            // Draw the text with the background color.
+                            *(fb + (y + k*2 + n) * pitch + (x + j*2 + m)) = 0x000000;
                         }
                     }
                 }
@@ -234,6 +236,53 @@ void write_string(struct limine_framebuffer *framebuffer, int x, int y, uint8_t 
     }
 }
 
+void write_string_black(struct limine_framebuffer *framebuffer, int x, int y, uint8_t color, const char *string) {
+    volatile uint32_t *fb = framebuffer->address;
+    uint32_t pitch = framebuffer->pitch / 4;
+
+    for (int i = 0; string[i] != '\0'; i++) {
+        char c = string[i];
+        uint8_t *glyph = &font8x8_basic[c][0];
+
+        for (int j = 0; j < 8; j++) {
+            for (int m = 0; m < 2; m++) {
+                for (int k = 7; k >= 0; k--) {
+                    for (int n = 0; n < 2; n++) {
+                        if (*glyph & (1 << k)) {
+                            *(fb + (y + k*2 + n) * pitch + (x + j*2 + m)) = 0x000000;
+                        }
+                    }
+                }
+            }
+            glyph++;
+        }
+        x += 16;
+    }
+}
+
+void welcome_box(struct limine_framebuffer *framebuffer, int x, int y, int width, int height, uint32_t bg_color, uint32_t border_color) {
+    // Draw the background square.
+    for (int i = 0; i < height; i++) {
+        uint32_t *fb_ptr = framebuffer->address;
+        int row = y + i;
+        int col_start = x;
+        int col_end = x + width - 1;
+        int col_count = col_end - col_start + 1;
+        int fb_pitch = framebuffer->pitch / 4;
+
+        for (int j = 0; j < col_count; j++) {
+            if (i == 0 || i == height - 1 || j == 0 || j == width - 1) {
+                *(fb_ptr + row * fb_pitch + col_start + j) = border_color;
+            } else {
+                *(fb_ptr + row * fb_pitch + col_start + j) = bg_color;
+            }
+        }
+    }
+    write_string_black(framebuffer, 210, 210, 0x000000, "Freeunix");
+    write_string_black(framebuffer, 210, 230, 0x000000, "Written By JACOB L GILL.");
+}
+
+
 
 void main_window(void) {
     // Define the parameters for the background square.
@@ -241,7 +290,7 @@ void main_window(void) {
     int x = 0;
     int y = 0;
     int size = 2000;
-    uint32_t bg_color = 0x5881C3; // Blue color for the background.
+    uint32_t bg_color = 0xFFFFFF; // WHITE color for the background.
 
     // Draw the background square.
     for (int i = 0; i < size; i++) {
@@ -275,44 +324,16 @@ void menu_bar(int x, int y, int width, int height, uint32_t color) {
             *(fb_ptr + i * fb_pitch + j) = color;
         }
     }
-
-    // Draw the border.
-    for (int i = 0; i < border_width; i++) {
-        int top = y + i;
-        int bottom = y + height - 1 - i;
-        int left = x + i;
-        int right = x + width - 1 - i;
-
-        // Top and bottom borders.
-        for (int j = left; j <= right; j++) {
-            *(fb_ptr + top * fb_pitch + j) = border_color;
-            *(fb_ptr + bottom * fb_pitch + j) = border_color;
-        }
-
-        // Left and right borders.
-        for (int j = top; j <= bottom; j++) {
-            *(fb_ptr + j * fb_pitch + left) = border_color;
-            *(fb_ptr + j * fb_pitch + right) = border_color;
-        }
-    }
 }
 
-
-int detect_mouse(void)
-{
-  inb.x.ax = 0;
-  int86(0x33, &inb, &outb);
-  return outb.x.ax;
-}
-
-// Define a function to initialize the mouse driver
 
 void _start(void) {
     int x = 0;
     int y = 0;
     int width = 1500;
-    int height = 40;
-    uint32_t color = 0x808080; // Grey color.
+    int height = 35;
+    uint32_t color = 0x6963D3; // purple color.
+
     // Ensure we got a framebuffer.
     if (framebuffer_request.response == NULL
      || framebuffer_request.response->framebuffer_count < 1) {
@@ -322,12 +343,12 @@ void _start(void) {
     // Fetch the first framebuffer.
     struct limine_framebuffer *framebuffer = framebuffer_request.response->framebuffers[0];
 
-    // Note: we assume the framebuffer model is RGB with 32-bit pixels.
 
     main_window();
     menu_bar(x, y, width, height, color);
-    write_string(framebuffer, 48, 15, 0x000000, "Freeunix");
+    write_string(framebuffer, 15, 10, 0x00, "[x]");
+    write_string(framebuffer, 402, 10, 0x00, "[Freeunix]");
+    welcome_box(framebuffer, 200, 200, 600, 400, 0xFFFFFF, 0x000000);
 
-    // We're done, just hang...
     hcf();
 }
